@@ -1,329 +1,60 @@
-# Google Snake Game - GitHub Pages Ready
 
-This canvas contains a complete, lightweight **Google-style Snake game** you can drop into a GitHub Pages repository.
-
-Files included (below):
-- `index.html` — main page
-- `styles.css` — styling
-- `script.js` — game logic
-- `README.md` — deployment + customization notes
-
----
-
-## index.html
 
 ```html
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Snake — Play Online</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Snake — Play Online</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="wrap">
-    <header>
-      <h1>Snake</h1>
-      <p class="subtitle">Use arrow keys or WASD — eat food to grow. Avoid walls and your tail.</p>
-    </header>
+<main class="wrap">
+<header>
+<h1>Snake</h1>
+<p class="subtitle">Use arrow keys or WASD — eat food to grow. Avoid walls and your tail.</p>
+</header>
 
-    <section class="game-area">
-      <canvas id="game" width="480" height="480" aria-label="Snake game canvas"></canvas>
-      <aside class="hud">
-        <div>Score: <span id="score">0</span></div>
-        <div>High: <span id="high">0</span></div>
-        <div>Speed: <span id="speed">5</span></div>
-        <button id="startBtn">Start / Restart</button>
-        <label class="label">Grid size
-          <select id="gridSize">
-            <option value="16">16</option>
-            <option value="20" selected>20</option>
-            <option value="24">24</option>
-            <option value="32">32</option>
-          </select>
-        </label>
-        <label class="label">Wrap walls
-          <input type="checkbox" id="wrap" />
-        </label>
-      </aside>
-    </section>
 
-    <section class="instructions">
-      <h2>How to play</h2>
-      <ul>
-        <li>Arrow keys or WASD to move.</li>
-        <li>Eat food to score and grow.</li>
-        <li>Colliding with your tail (or walls if wrap is off) ends the game.</li>
-      </ul>
-    </section>
+<section class="game-area">
+<canvas id="game" width="480" height="480" aria-label="Snake game canvas"></canvas>
+<aside class="hud">
+<div>Score: <span id="score">0</span></div>
+<div>High: <span id="high">0</span></div>
+<div>Speed: <span id="speed">5</span></div>
+<button id="startBtn">Start / Restart</button>
+<label class="label">Grid size
+<select id="gridSize">
+<option value="16">16</option>
+<option value="20" selected>20</option>
+<option value="24">24</option>
+<option value="32">32</option>
+</select>
+</label>
+<label class="label">Wrap walls
+<input type="checkbox" id="wrap" />
+</label>
+</aside>
+</section>
 
-    <footer>
-      <p>Made for GitHub Pages — customize freely.</p>
-    </footer>
-  </main>
 
-  <script src="script.js"></script>
+<section class="instructions">
+<h2>How to play</h2>
+<ul>
+<li>Arrow keys or WASD to move.</li>
+<li>Eat food to score and grow.</li>
+<li>Colliding with your tail (or walls if wrap is off) ends the game.</li>
+</ul>
+</section>
+
+
+<footer>
+<p>Made for GitHub Pages — customize freely.</p>
+</footer>
+</main>
+
+
+<script src="script.js"></script>
 </body>
 </html>
-```
-
----
-
-## styles.css
-
-```css
-:root{
-  --bg:#0f172a;
-  --panel:#0b1220;
-  --accent:#10b981;
-  --muted:#94a3b8;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#e6eef8;background:linear-gradient(180deg,var(--bg),#071027);display:flex;align-items:center;justify-content:center;padding:24px}
-.wrap{width:980px;max-width:100%;background:linear-gradient(180deg,#07142888,#00000022);padding:20px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,.6);backdrop-filter: blur(6px)}
-header h1{margin:0;font-size:28px}
-.subtitle{margin:6px 0 16px;color:var(--muted)}
-.game-area{display:flex;gap:16px;align-items:flex-start}
-canvas{background:linear-gradient(180deg,#021027,#05203a);border-radius:8px;display:block;box-shadow:inset 0 0 0 2px rgba(255,255,255,0.02)}
-.hud{min-width:220px;color:var(--muted);background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
-.hud div{margin-bottom:8px}
-#startBtn{background:var(--accent);color:#012;padding:8px 10px;border:0;border-radius:6px;cursor:pointer}
-.label{display:block;margin-top:8px}
-.instructions{margin-top:16px;color:var(--muted)}
-footer{margin-top:12px;color:var(--muted);font-size:13px}
-```
-
----
-
-## script.js
-
-```javascript
-// Simple Google-style Snake game
-(() => {
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
-  const scoreEl = document.getElementById('score');
-  const highEl = document.getElementById('high');
-  const startBtn = document.getElementById('startBtn');
-  const gridSelect = document.getElementById('gridSize');
-  const wrapCheckbox = document.getElementById('wrap');
-  const speedEl = document.querySelector('#speed');
-
-  let grid = parseInt(gridSelect.value,10); // cells per row
-  let cellSize = canvas.width / grid;
-  let snake = [{x: Math.floor(grid/2), y: Math.floor(grid/2)}];
-  let dir = {x:1,y:0};
-  let food = null;
-  let score = 0;
-  let high = parseInt(localStorage.getItem('snake_high')||'0',10);
-  highEl.textContent = high;
-  let speed = 6; // frames per second
-  let running = false;
-  let lastTime = 0;
-  let tickInterval = 1000 / speed;
-
-  function resizeGrid(){
-    grid = parseInt(gridSelect.value,10);
-    cellSize = canvas.width / grid;
-  }
-
-  function reset(){
-    resizeGrid();
-    snake = [{x: Math.floor(grid/2), y: Math.floor(grid/2)}];
-    dir = {x:1,y:0};
-    score = 0; scoreEl.textContent = score;
-    placeFood();
-    running = true;
-    tickInterval = 1000 / speed;
-  }
-
-  function placeFood(){
-    let tries=0;
-    while(tries<1000){
-      const x = Math.floor(Math.random()*grid);
-      const y = Math.floor(Math.random()*grid);
-      if(!snake.some(s=>s.x===x && s.y===y)){
-        food = {x,y};
-        return;
-      }
-      tries++;
-    }
-    food = null;
-  }
-
-  function step(){
-    const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-
-    if(wrapCheckbox.checked){
-      head.x = (head.x + grid) % grid;
-      head.y = (head.y + grid) % grid;
-    }
-
-    // check wall collisions
-    if(!wrapCheckbox.checked && (head.x < 0 || head.x >= grid || head.y < 0 || head.y >= grid)){
-      gameOver(); return;
-    }
-
-    // check self collision
-    if(snake.some(s=>s.x===head.x && s.y===head.y)){
-      gameOver(); return;
-    }
-
-    snake.unshift(head);
-
-    // eat food
-    if(food && head.x===food.x && head.y===food.y){
-      score += 10;
-      scoreEl.textContent = score;
-      placeFood();
-      if(score > high){ high = score; localStorage.setItem('snake_high', high); highEl.textContent = high; }
-    } else {
-      snake.pop();
-    }
-  }
-
-  function gameOver(){
-    running = false;
-    // brief flash
-    flashBoard();
-  }
-
-  function flashBoard(){
-    ctx.fillStyle = '#ff4d4d33';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    setTimeout(()=>draw(),120);
-  }
-
-  function draw(){
-    // background
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    // grid background
-    ctx.fillStyle = '#021827';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    // draw food
-    if(food){
-      ctx.fillStyle = '#ffcc00';
-      ctx.fillRect(food.x*cellSize+2, food.y*cellSize+2, cellSize-4, cellSize-4);
-    }
-
-    // draw snake
-    ctx.fillStyle = '#10b981';
-    for(let i=0;i<snake.length;i++){
-      const s = snake[i];
-      ctx.fillRect(s.x*cellSize+1, s.y*cellSize+1, cellSize-2, cellSize-2);
-    }
-
-    // overlay when paused
-    if(!running){
-      ctx.fillStyle = 'rgba(2,6,23,0.6)';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = '#fff';
-      ctx.font = '20px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Press Start or Arrow/WASD to begin', canvas.width/2, canvas.height/2);
-    }
-  }
-
-  function loop(ts){
-    if(!lastTime) lastTime = ts;
-    const dt = ts - lastTime;
-    if(running){
-      if(dt >= tickInterval){
-        lastTime = ts;
-        step();
-      }
-    } else {
-      // when not running, still allow a low-rate draw to show overlay
-      lastTime = ts;
-    }
-    draw();
-    requestAnimationFrame(loop);
-  }
-
-  // input handling
-  const keyMap = {
-    'ArrowUp':'up','ArrowDown':'down','ArrowLeft':'left','ArrowRight':'right',
-    'w':'up','s':'down','a':'left','d':'right'
-  };
-
-  window.addEventListener('keydown', e => {
-    const k = keyMap[e.key];
-    if(k){
-      e.preventDefault();
-      const nd = {x:0,y:0};
-      if(k==='up') nd.y=-1;
-      if(k==='down') nd.y=1;
-      if(k==='left') nd.x=-1;
-      if(k==='right') nd.x=1;
-      // prevent reverse
-      if(snake.length>1 && nd.x === -dir.x && nd.y === -dir.y) return;
-      dir = nd;
-      // start on first keypress
-      if(!running){ reset(); }
-    }
-
-    if(e.key === ' '){ // space to pause
-      e.preventDefault();
-      running = !running;
-    }
-  });
-
-  // UI controls
-  startBtn.addEventListener('click', ()=>{ reset(); });
-  gridSelect.addEventListener('change', ()=>{ reset(); });
-
-  // speed control: simple +/- with keys 1-9
-  window.addEventListener('keypress', (e)=>{
-    if(/[1-9]/.test(e.key)){
-      speed = Math.max(1, Math.min(15, parseInt(e.key,10)));
-      tickInterval = 1000 / speed;
-      document.querySelector('#speed').textContent = speed;
-    }
-  });
-
-  // initial placement
-  function init(){
-    resizeCanvas();
-    placeFood();
-    draw();
-    requestAnimationFrame(loop);
-  }
-
-  function resizeCanvas(){
-    // keep canvas square; it is fixed size in this simple version
-    cellSize = canvas.width / grid;
-  }
-
-  init();
-})();
-```
-
----
-
-## README.md
-
-```md
-# Google-Style Snake (GitHub Pages)
-
-This is a lightweight HTML/CSS/JS implementation of the classic Snake game. To deploy on GitHub Pages:
-
-1. Create a new repository on GitHub (e.g., `snake-game`).
-2. Add the files: `index.html`, `styles.css`, `script.js`.
-3. Commit and push to the `main` branch.
-4. In the repository Settings -> Pages, choose `main` branch / `/` folder and publish.
-
-Files are intentionally small and dependency-free. Customize grid size, speed, and styles in `script.js` and `styles.css`.
-```
-
----
-
-If you want, I can:
-- split these into separate canvas files for easier downloading, or
-- create a ZIP and put it in the canvas for you to download, or
-- commit directly to a GitHub repo if you provide access details.
-
-Tell me which of the above you want next (e.g., "make ZIP", "add mobile touch controls", or "add highscore server support").
